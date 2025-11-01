@@ -7,12 +7,13 @@ export interface Note {
   updatedAt: number;
 }
 
+// Глобальное состояние (singleton)
+const notes = ref<Note[]>([]);
+const loading = ref(false);
+const STORAGE_KEY = "brutal_notes";
+
 export const useNotes = () => {
   const { getItem, setItem, hapticFeedback } = useTelegram();
-
-  const notes = ref<Note[]>([]);
-  const loading = ref(false);
-  const STORAGE_KEY = "brutal_notes";
 
   // Загрузка заметок из Telegram Cloud Storage
   const loadNotes = async () => {

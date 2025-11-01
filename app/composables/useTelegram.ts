@@ -1,8 +1,9 @@
-export const useTelegram = () => {
-  const isReady = ref(false);
-  const error = ref<string | null>(null);
-  const storage = ref<any>(null);
+// Глобальное состояние (singleton)
+const isReady = ref(false);
+const error = ref<string | null>(null);
+const storage = ref<any>(null);
 
+export const useTelegram = () => {
   const init = async (): Promise<void> => {
     try {
       if (typeof window !== "undefined") {
@@ -54,6 +55,7 @@ export const useTelegram = () => {
   const getItem = async (key: string): Promise<string | null> => {
     return new Promise((resolve) => {
       try {
+        console.log("🔍 getItem called, storage.value:", !!storage.value);
         if (!storage.value) {
           console.warn("⚠️ CloudStorage not initialized for getItem");
           resolve(null);
