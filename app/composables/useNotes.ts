@@ -16,18 +16,30 @@ export const useNotes = () => {
   const { getItem, setItem, hapticFeedback } = useTelegram();
 
   // Загрузка заметок из Telegram Cloud Storage
-  const loadNotes = async () => {
-    loading.value = true;
+  const loadNotes = async (silent = false) => {
+    if (!silent) {
+      loading.value = true;
+    }
     try {
       const data = await getItem(STORAGE_KEY);
       if (data) {
-        notes.value = JSON.parse(data);
-        console.log(`📚 Loaded ${notes.value.length} notes`);
+        const newNotes = JSON.parse(data);
+        // Обновляем только если данные изменились
+        if (JSON.stringify(notes.value) !== JSON.stringify(newNotes)) {
+          notes.value = newNotes;
+          console.log(`📚 Loaded ${notes.value.length} notes`);
+        } else {
+          console.log(
+            `✓ Notes already up to date (${notes.value.length} items)`
+          );
+        }
       }
     } catch (e) {
       console.error("Error loading notes:", e);
     } finally {
-      loading.value = false;
+      if (!silent) {
+        loading.value = false;
+      }
     }
   };
 
@@ -112,10 +124,10 @@ export const useNotes = () => {
     }
   };
 
-  // Принудительная синхронизация с Cloud Storage
+  // Принудительная синхронизация с Cloud Storage (без моргания)
   const syncNotes = async () => {
     console.log("🔄 Syncing notes from Cloud Storage...");
-    await loadNotes();
+    await loadNotes(true); // silent = true, без индикатора загрузки
   };
 
   // Статистика

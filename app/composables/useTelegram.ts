@@ -25,9 +25,9 @@ export const useTelegram = () => {
         // Расширяем viewport
         WebApp.expand();
 
-        // Настройка темы
-        WebApp.setHeaderColor("#ffffff");
-        WebApp.setBackgroundColor("#ffffff");
+        // Настройка темы (темно-серый цвет как фон приложения)
+        WebApp.setHeaderColor("#161616");
+        WebApp.setBackgroundColor("#161616");
 
         // Готов к показу
         WebApp.ready();

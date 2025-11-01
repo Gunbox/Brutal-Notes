@@ -35,17 +35,12 @@ const canAdd = computed(() => {
   return newTitle.value.trim().length > 0 && newText.value.trim().length > 0;
 });
 
-// Индикатор синхронизации
-const syncing = ref(false);
-
 // Debounce для синхронизации (избегаем множественных вызовов)
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 const debouncedSync = async () => {
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async () => {
-    syncing.value = true;
     await syncNotes();
-    syncing.value = false;
   }, 300); // 300ms задержка
 };
 
@@ -187,7 +182,7 @@ const showToast = (message: string, type: "success" | "error" = "success") => {
 <template>
   <div style="padding: 1rem; margin: 0">
     <pre>
-BRUTAL NOTES v0.0.1{{ syncing ? " [SYNCING...]" : "" }}
+BRUTAL NOTES v0.0.1
 -----------------------------------------
 TOTAL: {{ stats.total }} | ACTIVE: {{ stats.active }} | DONE: {{
         stats.completed
