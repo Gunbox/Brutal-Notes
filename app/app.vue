@@ -49,6 +49,10 @@ onMounted(async () => {
   console.log("🚀 App mounting...");
   await initTelegram();
   console.log("✅ Telegram initialized, isReady:", isReady.value);
+
+  // Даем дополнительное время для инициализации CloudStorage
+  await new Promise((resolve) => setTimeout(resolve, 200));
+
   await loadNotes();
   console.log("✅ Notes loaded");
 

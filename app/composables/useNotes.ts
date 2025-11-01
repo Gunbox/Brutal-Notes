@@ -16,30 +16,47 @@ export const useNotes = () => {
   const { getItem, setItem, hapticFeedback } = useTelegram();
 
   // Загрузка заметок из Telegram Cloud Storage
-  const loadNotes = async (silent = false) => {
+  const loadNotes = async (silent = false, retries = 3) => {
     if (!silent) {
       loading.value = true;
     }
-    try {
-      const data = await getItem(STORAGE_KEY);
-      if (data) {
-        const newNotes = JSON.parse(data);
-        // Обновляем только если данные изменились
-        if (JSON.stringify(notes.value) !== JSON.stringify(newNotes)) {
-          notes.value = newNotes;
-          console.log(`📚 Loaded ${notes.value.length} notes`);
-        } else {
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const data = await getItem(STORAGE_KEY);
+        if (data) {
+          const newNotes = JSON.parse(data);
+          // Обновляем только если данные изменились
+          if (JSON.stringify(notes.value) !== JSON.stringify(newNotes)) {
+            notes.value = newNotes;
+            console.log(`📚 Loaded ${notes.value.length} notes`);
+          } else {
+            console.log(
+              `✓ Notes already up to date (${notes.value.length} items)`
+            );
+          }
+          break; // Успешно загрузили, выходим из цикла
+        } else if (attempt < retries) {
           console.log(
-            `✓ Notes already up to date (${notes.value.length} items)`
+            `⏳ Attempt ${attempt}/${retries}: No data yet, retrying...`
           );
+          await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+        } else {
+          console.log(`ℹ️ No saved notes found after ${retries} attempts`);
+        }
+      } catch (e) {
+        console.error(
+          `Error loading notes (attempt ${attempt}/${retries}):`,
+          e
+        );
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
         }
       }
-    } catch (e) {
-      console.error("Error loading notes:", e);
-    } finally {
-      if (!silent) {
-        loading.value = false;
-      }
+    }
+
+    if (!silent) {
+      loading.value = false;
     }
   };
 

@@ -9,10 +9,29 @@ export const useTelegram = () => {
       if (typeof window !== "undefined") {
         let WebApp: any;
 
-        // Проверяем наличие Telegram WebApp
-        if ((window as any).Telegram?.WebApp) {
+        // Даем время Telegram WebApp инициализироваться
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        // Проверяем наличие Telegram WebApp более тщательно
+        const hasTelegramWebApp = !!(
+          (window as any).Telegram?.WebApp?.initData ||
+          (window as any).Telegram?.WebApp?.platform
+        );
+
+        if (hasTelegramWebApp) {
           WebApp = (window as any).Telegram.WebApp;
-          console.log("✅ Using Telegram WebApp");
+          console.log("✅ Using Telegram WebApp", {
+            platform: WebApp.platform,
+            version: WebApp.version,
+          });
+
+          // Для реального Telegram используем реальный CloudStorage
+          if (WebApp.CloudStorage) {
+            storage.value = WebApp.CloudStorage;
+            console.log("✅ Using Telegram CloudStorage");
+          } else {
+            console.warn("⚠️ CloudStorage not available in Telegram WebApp");
+          }
         } else {
           // Используем mock для разработки
           const { createMockTelegramWebApp } = await import(
@@ -20,6 +39,12 @@ export const useTelegram = () => {
           );
           WebApp = createMockTelegramWebApp();
           console.log("⚠️ Using Mock Telegram WebApp for development");
+
+          // Для mock используем mock storage
+          if (WebApp.CloudStorage) {
+            storage.value = WebApp.CloudStorage;
+            console.log("✅ Using Mock CloudStorage");
+          }
         }
 
         // Расширяем viewport
@@ -31,14 +56,6 @@ export const useTelegram = () => {
 
         // Готов к показу
         WebApp.ready();
-
-        // Сохраняем ссылку на CloudStorage
-        if (WebApp.CloudStorage) {
-          storage.value = WebApp.CloudStorage;
-          console.log("✅ CloudStorage initialized");
-        } else {
-          console.error("❌ CloudStorage not available");
-        }
 
         console.log("✅ Telegram Mini App initialized");
       }
