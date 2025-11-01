@@ -5,6 +5,7 @@ const {
   loading,
   stats,
   loadNotes,
+  syncNotes,
   addNote,
   toggleNote,
   deleteNote,
@@ -34,6 +35,20 @@ const canAdd = computed(() => {
   return newTitle.value.trim().length > 0 && newText.value.trim().length > 0;
 });
 
+// Индикатор синхронизации
+const syncing = ref(false);
+
+// Debounce для синхронизации (избегаем множественных вызовов)
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+const debouncedSync = async () => {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    syncing.value = true;
+    await syncNotes();
+    syncing.value = false;
+  }, 300); // 300ms задержка
+};
+
 // Инициализация
 onMounted(async () => {
   console.log("🚀 App mounting...");
@@ -41,6 +56,31 @@ onMounted(async () => {
   console.log("✅ Telegram initialized, isReady:", isReady.value);
   await loadNotes();
   console.log("✅ Notes loaded");
+
+  // Синхронизация при разворачивании приложения
+  if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+    const WebApp = (window as any).Telegram.WebApp;
+
+    // Подписываемся на событие изменения viewport
+    WebApp.onEvent("viewportChanged", async () => {
+      console.log("📱 Viewport changed, syncing data...");
+      await debouncedSync();
+    });
+
+    // Также синхронизируем при получении фокуса
+    window.addEventListener("focus", async () => {
+      console.log("👁️ App focused, syncing data...");
+      await debouncedSync();
+    });
+
+    // Синхронизация при возвращении из фона (visibilitychange)
+    document.addEventListener("visibilitychange", async () => {
+      if (!document.hidden) {
+        console.log("👁️ App visible again, syncing data...");
+        await debouncedSync();
+      }
+    });
+  }
 });
 
 // Добавление заметки
@@ -147,7 +187,7 @@ const showToast = (message: string, type: "success" | "error" = "success") => {
 <template>
   <div style="padding: 1rem; margin: 0">
     <pre>
-BRUTAL NOTES v0.0.1
+BRUTAL NOTES v0.0.1{{ syncing ? " [SYNCING...]" : "" }}
 -----------------------------------------
 TOTAL: {{ stats.total }} | ACTIVE: {{ stats.active }} | DONE: {{
         stats.completed

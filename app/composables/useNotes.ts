@@ -112,6 +112,12 @@ export const useNotes = () => {
     }
   };
 
+  // Принудительная синхронизация с Cloud Storage
+  const syncNotes = async () => {
+    console.log("🔄 Syncing notes from Cloud Storage...");
+    await loadNotes();
+  };
+
   // Статистика
   const stats = computed(() => ({
     total: notes.value.length,
@@ -124,6 +130,7 @@ export const useNotes = () => {
     loading,
     stats,
     loadNotes,
+    syncNotes,
     addNote,
     updateNote,
     toggleNote,
