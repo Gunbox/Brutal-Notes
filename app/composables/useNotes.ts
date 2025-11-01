@@ -34,10 +34,16 @@ export const useNotes = () => {
   const saveNotes = async () => {
     try {
       const data = JSON.stringify(notes.value);
-      await setItem(STORAGE_KEY, data);
-      console.log(`💾 Saved ${notes.value.length} notes`);
+      const success = await setItem(STORAGE_KEY, data);
+      if (success) {
+        console.log(`💾 Saved ${notes.value.length} notes successfully`);
+      } else {
+        console.error("❌ Failed to save notes");
+      }
+      return success;
     } catch (e) {
-      console.error("Error saving notes:", e);
+      console.error("❌ Error saving notes:", e);
+      return false;
     }
   };
 

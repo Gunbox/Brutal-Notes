@@ -36,8 +36,11 @@ const canAdd = computed(() => {
 
 // Инициализация
 onMounted(async () => {
+  console.log("🚀 App mounting...");
   await initTelegram();
+  console.log("✅ Telegram initialized, isReady:", isReady.value);
   await loadNotes();
+  console.log("✅ Notes loaded");
 });
 
 // Добавление заметки
