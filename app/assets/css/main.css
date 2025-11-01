@@ -1,0 +1,21 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --black: #000000;
+  --white: #ffffff;
+}
+
+body {
+  background: #161616ff;
+  color: #9b9b9bff;
+  overflow-x: hidden;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-family: monospace;
+}
