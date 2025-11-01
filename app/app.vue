@@ -201,15 +201,62 @@ ADD NOTE BELOW
         </pre>
       </div>
       <div v-else>
-        <div v-for="note in notes" :key="note.id">
-          <pre :style="[note.completed && 'text-decoration: line-through;']">
+        <div v-for="note in notes" :key="note.id" style="margin-bottom: 24px">
+          <pre
+            :style="[
+              note.completed && 'text-decoration: line-through;',
+              'white-space: pre-wrap;',
+            ]"
+          >
 ID: {{ note.id }}
 TITLE: {{ note.title }}
 TEXT: {{ note.text }}
 DATE: {{ formatDate(note.createdAt) }}
 STATUS: {{ note.completed ? "DONE" : "ACTIVE" }}
           </pre>
-          <div style="display: flex; gap: 8px; margin-bottom: 16px">
+
+          <!-- Подтверждение удаления для конкретной заметки -->
+          <div
+            v-if="
+              confirmModal.show &&
+              confirmModal.action === 'delete' &&
+              confirmModal.noteId === note.id
+            "
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+              margin-bottom: 8px;
+              white-space: pre-wrap;
+            "
+          >
+            <pre style="color: red">DELETE THIS NOTE? CANNOT BE UNDONE.</pre>
+            <span
+              @click="confirmAction"
+              style="
+                cursor: pointer;
+                background: #222;
+                color: #eee;
+                padding: 2px 8px;
+                user-select: none;
+              "
+              >[CONFIRM]</span
+            >
+            <span
+              @click="cancelAction"
+              style="
+                cursor: pointer;
+                background: #222;
+                color: red;
+                padding: 2px 8px;
+                user-select: none;
+              "
+              >[CANCEL]</span
+            >
+          </div>
+
+          <!-- Кнопки действий -->
+          <div v-else style="display: flex; gap: 8px">
             <span
               @click="toggleNote(note.id)"
               style="
@@ -234,8 +281,46 @@ STATUS: {{ note.completed ? "DONE" : "ACTIVE" }}
           </div>
         </div>
       </div>
+      <!-- Кнопка очистки завершенных и её подтверждение -->
       <div v-if="stats.completed > 0" style="margin-bottom: 16px">
+        <div
+          v-if="confirmModal.show && confirmModal.action === 'clear'"
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+          "
+        >
+          <pre style="color: red">
+CLEAR ALL {{ stats.completed }} DONE NOTES? CANNOT BE UNDONE.</pre
+          >
+          <span
+            @click="confirmAction"
+            style="
+              cursor: pointer;
+              background: #222;
+              color: #eee;
+              padding: 2px 8px;
+              user-select: none;
+            "
+            >[CONFIRM]</span
+          >
+          <span
+            @click="cancelAction"
+            style="
+              cursor: pointer;
+              background: #222;
+              color: red;
+              padding: 2px 8px;
+              user-select: none;
+            "
+            >[CANCEL]</span
+          >
+        </div>
         <span
+          v-else
           @click="showClearConfirm"
           style="
             cursor: pointer;
@@ -244,46 +329,6 @@ STATUS: {{ note.completed ? "DONE" : "ACTIVE" }}
             user-select: none;
           "
           >[CLEAR DONE ({{ stats.completed }})]</span
-        >
-      </div>
-      <div
-        v-if="confirmModal.show"
-        style="
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-bottom: 16px;
-          white-space: pre-wrap;
-        "
-      >
-        <pre
-          >{{
-            confirmModal.action === "delete"
-              ? `DELETE "${confirmModal.noteTitle}"? THIS ACTION CANNOT BE UNDONE.`
-              : `CLEAR ALL COMPLETED NOTES? THIS WILL DELETE ${stats.completed} ITEM(S). THIS ACTION CANNOT BE UNDONE.`
-          }}
-        </pre>
-        <span
-          @click="confirmAction"
-          style="
-            cursor: pointer;
-            background: #222;
-            color: #eee;
-            padding: 2px 8px;
-            user-select: none;
-          "
-          >[CONFIRM]</span
-        >
-        <span
-          @click="cancelAction"
-          style="
-            cursor: pointer;
-            background: #222;
-            color: red;
-            padding: 2px 8px;
-            user-select: none;
-          "
-          >[CANCEL]</span
         >
       </div>
       <div>
