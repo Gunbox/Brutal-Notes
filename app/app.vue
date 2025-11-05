@@ -8,9 +8,21 @@ const {
   syncNotes,
   addNote,
   toggleNote,
+  togglePin,
   deleteNote,
   clearCompleted,
 } = useNotes();
+
+// Сортировка заметок: закрепленные всегда вверху
+const sortedNotes = computed(() => {
+  return [...notes.value].sort((a, b) => {
+    // Сначала закрепленные
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    // Потом по дате создания (новые сверху)
+    return b.createdAt - a.createdAt;
+  });
+});
 
 const newTitle = ref("");
 const newText = ref("");
@@ -100,6 +112,15 @@ const handleAdd = async () => {
 // Открытие модалки добавления
 const openAddModal = () => {
   addModal.value = true;
+  // Фокус на input после рендера
+  nextTick(() => {
+    const titleInput = document.querySelector(
+      'input[placeholder="Enter title..."]'
+    ) as HTMLInputElement;
+    if (titleInput) {
+      titleInput.focus();
+    }
+  });
 };
 
 // Закрытие модалки добавления
@@ -205,11 +226,20 @@ ADD NOTE BELOW
         </pre>
       </div>
       <div v-else>
-        <div v-for="note in notes" :key="note.id" style="margin-bottom: 24px">
+        <div
+          v-for="note in sortedNotes"
+          :key="note.id"
+          :style="[
+            'margin-bottom: 24px;',
+            note.pinned &&
+              'background: #1a1a1a; border-left: 4px solid #0f0; padding: 8px;',
+          ]"
+        >
           <pre
             :style="[
               note.completed && 'text-decoration: line-through;',
               'white-space: pre-wrap;',
+              note.pinned && 'color: #0f0;',
             ]"
           >
 ID: {{ note.id }}
@@ -240,7 +270,7 @@ STATUS: {{ note.completed ? "DONE" : "ACTIVE" }}
               style="
                 cursor: pointer;
                 background: #222;
-                color: #eee;
+                color: red;
                 padding: 2px 8px;
                 user-select: none;
               "
@@ -251,7 +281,7 @@ STATUS: {{ note.completed ? "DONE" : "ACTIVE" }}
               style="
                 cursor: pointer;
                 background: #222;
-                color: red;
+                color: #eee;
                 padding: 2px 8px;
                 user-select: none;
               "
@@ -260,7 +290,17 @@ STATUS: {{ note.completed ? "DONE" : "ACTIVE" }}
           </div>
 
           <!-- Кнопки действий -->
-          <div v-else style="display: flex; gap: 8px">
+          <div v-else style="display: flex; gap: 8px; flex-wrap: wrap">
+            <span
+              @click="togglePin(note.id)"
+              style="
+                cursor: pointer;
+                background: #222;
+                padding: 2px 8px;
+                user-select: none;
+              "
+              >[{{ note.pinned ? "UNPIN" : "PIN" }}]</span
+            >
             <span
               @click="toggleNote(note.id)"
               style="
@@ -305,7 +345,7 @@ CLEAR ALL {{ stats.completed }} DONE NOTES? CANNOT BE UNDONE.</pre
             style="
               cursor: pointer;
               background: #222;
-              color: #eee;
+              color: red;
               padding: 2px 8px;
               user-select: none;
             "
@@ -316,7 +356,7 @@ CLEAR ALL {{ stats.completed }} DONE NOTES? CANNOT BE UNDONE.</pre
             style="
               cursor: pointer;
               background: #222;
-              color: red;
+              color: #eee;
               padding: 2px 8px;
               user-select: none;
             "
@@ -335,23 +375,122 @@ CLEAR ALL {{ stats.completed }} DONE NOTES? CANNOT BE UNDONE.</pre
           >[CLEAR DONE ({{ stats.completed }})]</span
         >
       </div>
-      <div>
-        <pre>
-ADD NOTE:
-TITLE:
-<input v-model="newTitle" type="text" style="background:#222;color:#eee;border:none;outline:none;padding: 5px;width: 100%;margin:4px 0;" />
-TEXT:
-<textarea v-model="newText" rows="4" style="background:#222;color:#eee;border:none;outline:none;padding: 5px;width: 100%;margin:4px 0;"></textarea>
-        </pre>
-        <span
-          @click="handleAdd"
-          :style="
-            canAdd
-              ? 'cursor:pointer;background:#222;color:#eee;padding:2px 8px;user-select:none;'
-              : 'background:#222;color:#555;padding:2px 8px;user-select:none;'
+
+      <!-- Кнопка открытия модалки добавления -->
+      <span
+        @click="openAddModal"
+        style="
+          cursor: pointer;
+          background: #222;
+          color: #0f0;
+          padding: 2px 8px;
+          user-select: none;
+        "
+        >[+ NEW NOTE]</span
+      >
+
+      <!-- Модальное окно добавления в стиле MS-DOS -->
+      <div
+        v-if="addModal"
+        style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.85);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+          z-index: 1000;
+        "
+        @click.self="closeAddModal"
+      >
+        <div
+          style="
+            background: #000;
+            border: 3px double #aaa;
+            max-width: 500px;
+            width: 100%;
           "
-          >[ADD]</span
         >
+          <div
+            style="
+              background: blue;
+              color: #fff;
+              padding: 8px 12px;
+              margin: 0;
+              font-weight: bold;
+              text-align: center;
+              border-bottom: 2px solid #aaa;
+            "
+          >
+            █ ADD NEW NOTE █
+          </div>
+          <div style="padding: 16px">
+            <pre style="margin: 0 0 8px 0">TITLE:</pre>
+            <input
+              v-model="newTitle"
+              type="text"
+              placeholder="Enter title..."
+              style="
+                background: #000;
+                color: #eee;
+                border: 1px solid #555;
+                border-radius: 0;
+                outline: none;
+                padding: 8px;
+                width: 100%;
+                margin: 0 0 16px 0;
+                font-family: monospace;
+                font-size: 14px;
+              "
+            />
+            <pre style="margin: 0 0 8px 0">TEXT:</pre>
+            <textarea
+              v-model="newText"
+              rows="6"
+              placeholder="Enter note text..."
+              style="
+                background: #000;
+                color: #eee;
+                border: 1px solid #555;
+                border-radius: 0;
+                outline: none;
+                padding: 8px;
+                width: 100%;
+                margin: 0 0 16px 0;
+                font-family: monospace;
+                font-size: 14px;
+                resize: vertical;
+              "
+            ></textarea>
+            <div style="display: flex; gap: 8px; justify-content: flex-end">
+              <span
+                @click="closeAddModal"
+                style="
+                  cursor: pointer;
+                  background: #333;
+                  color: #eee;
+                  border: 1px solid #555;
+                  padding: 4px 16px;
+                  user-select: none;
+                "
+                >CANCEL</span
+              >
+              <span
+                @click="handleAdd"
+                :style="
+                  canAdd
+                    ? 'cursor:pointer;background:#0a0;color:#000;border:1px solid #0f0;padding:4px 16px;user-select:none;font-weight:bold;'
+                    : 'background:#333;color:#555;border:1px solid #444;padding:4px 16px;user-select:none;'
+                "
+                >ADD</span
+              >
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <div v-if="toast.show" style="margin-top: 14px">

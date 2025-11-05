@@ -3,6 +3,7 @@ export interface Note {
   title: string;
   text: string;
   completed: boolean;
+  pinned?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -104,12 +105,23 @@ export const useNotes = () => {
         title: updates.title ?? currentNote.title,
         text: updates.text ?? currentNote.text,
         completed: updates.completed ?? currentNote.completed,
+        pinned: updates.pinned ?? currentNote.pinned,
         createdAt: currentNote.createdAt,
         updatedAt: Date.now(),
       };
       await saveNotes();
       hapticFeedback("light");
       console.log("📝 Note updated:", id);
+    }
+  };
+
+  // Закрепление/открепление заметки
+  const togglePin = async (id: string) => {
+    const note = notes.value.find((n) => n.id === id);
+    if (note) {
+      await updateNote(id, { pinned: !note.pinned });
+      hapticFeedback("medium");
+      console.log(`📌 Note ${note.pinned ? "pinned" : "unpinned"}:`, id);
     }
   };
 
@@ -163,6 +175,7 @@ export const useNotes = () => {
     addNote,
     updateNote,
     toggleNote,
+    togglePin,
     deleteNote,
     clearCompleted,
   };
